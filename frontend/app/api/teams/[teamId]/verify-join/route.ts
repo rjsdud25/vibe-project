@@ -23,7 +23,7 @@ export async function POST(
     return jsonError("비밀번호를 입력해 주세요.", 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: team, error } = await supabase
     .from("teams")
     .select("id, invite_code")

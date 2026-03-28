@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 /** 연결 확인: Supabase에 단순 쿼리 */
 export async function GET() {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { error } = await supabase.from("teams").select("id").limit(1);
     if (error) {
       return NextResponse.json(

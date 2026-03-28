@@ -7,8 +7,20 @@ import {
 } from "@/lib/team-join-password";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+function isJsonContentType(request: Request): boolean {
+  const ct = request.headers.get("content-type") ?? "";
+  return ct.toLowerCase().includes("application/json");
+}
+
 export async function GET() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return jsonError("로그인이 필요합니다.", 401);
+  }
+
   const { data, error } = await supabase
     .from("teams")
     .select("id, name, created_at")
@@ -23,6 +35,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isJsonContentType(request)) {
+    return jsonError("Content-Type은 application/json이어야 합니다.", 415);
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -33,6 +49,9 @@ export async function POST(request: Request) {
     typeof body === "object" && body !== null
       ? (body as Record<string, unknown>)
       : {};
+  if ("name" in b && typeof b.name !== "string") {
+    return jsonError("name 필드는 문자열이어야 합니다.", 400);
+  }
   const nameRaw = typeof b.name === "string" ? b.name : "";
   const nameErr = validateTeamName(nameRaw);
   if (nameErr) {
@@ -51,7 +70,14 @@ export async function POST(request: Request) {
     return jsonError(pwdErr, 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return jsonError("로그인이 필요합니다.", 401);
+  }
+
   const { data, error } = await supabase
     .from("teams")
     .insert({ name, invite_code })
@@ -65,7 +91,7 @@ export async function POST(request: Request) {
         409
       );
     }
-    return jsonError(error.message ?? "팀 생성에 실패했습니다.", 500);
+    return jsonError("팀 생성에 실패했습니다.", 500);
   }
 
   return NextResponse.json(

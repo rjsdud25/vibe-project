@@ -30,7 +30,7 @@ export async function POST(
     /* 본문 없음 — 자동 마감 */
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: session, error: sErr } = await supabase
     .from("sessions")

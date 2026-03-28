@@ -13,7 +13,7 @@ export async function GET(
     return jsonError("세션 ID가 필요합니다.", 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: session, error: sErr } = await supabase
     .from("sessions")
@@ -100,7 +100,7 @@ export async function POST(
     return jsonError("member_id와 proposal_id가 필요합니다.", 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: session, error: sErr } = await supabase
     .from("sessions")

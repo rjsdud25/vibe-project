@@ -28,7 +28,7 @@ export async function DELETE(
     return jsonError("actor_member_id가 필요합니다.", 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: team, error: teamErr } = await supabase
     .from("teams")

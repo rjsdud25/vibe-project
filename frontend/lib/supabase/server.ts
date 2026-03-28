@@ -1,11 +1,31 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** Route Handlers / Server Actions — anon key + RLS (MVP policies). */
-export function createServerSupabaseClient(): SupabaseClient {
+/** Route Handlers / Server Actions — anon key + 쿠키 기반 세션(RLS). */
+export async function createServerSupabaseClient(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set");
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY is not set"
+    );
   }
-  return createClient(url, key);
+  const cookieStore = await cookies();
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          /* Route Handler에서 읽기 전용일 수 있음 */
+        }
+      },
+    },
+  });
 }

@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return jsonError("닉네임을 입력해 주세요.", 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: team, error: teamErr } = await supabase
     .from("teams")
     .select("id, name, invite_code")

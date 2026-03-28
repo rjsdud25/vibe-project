@@ -11,7 +11,7 @@ export async function GET(
     return jsonError("팀 ID가 필요합니다.", 400);
   }
 
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data: team, error } = await supabase
     .from("teams")
     .select("id, name, invite_code, created_at")

@@ -3,14 +3,31 @@ import { jsonError } from "@/lib/api-response";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const VOTE_MS = 10 * 60 * 1000;
+/** 마감 예정 시각 기준 이 시간(분) 안쪽이면 팀 생성자가 조기 마감 가능 */
+const CREATOR_FINALIZE_LEAD_MS = 10 * 60 * 1000;
 
 export async function POST(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ sessionId: string }> }
 ) {
   const { sessionId } = await context.params;
   if (!sessionId) {
     return jsonError("세션 ID가 필요합니다.", 400);
+  }
+
+  let memberId = "";
+  try {
+    const raw = await request.json();
+    if (
+      raw &&
+      typeof raw === "object" &&
+      "member_id" in raw &&
+      typeof (raw as { member_id: unknown }).member_id === "string"
+    ) {
+      memberId = (raw as { member_id: string }).member_id.trim();
+    }
+  } catch {
+    /* 본문 없음 — 자동 마감 */
   }
 
   const supabase = createServerSupabaseClient();
@@ -47,10 +64,47 @@ export async function POST(
   const totalMembers = (members ?? []).length;
   const votedCount = new Set((votes ?? []).map((v) => v.member_id as string))
     .size;
-  const timeUp = Number.isFinite(started) && Date.now() >= started + VOTE_MS;
+  const now = Date.now();
+  const timeUp = Number.isFinite(started) && now >= started + VOTE_MS;
   const allVoted = totalMembers > 0 && votedCount >= totalMembers;
 
-  if (!timeUp && !allVoted) {
+  let creatorEarlyOk = false;
+  let firstMemberId: string | undefined;
+  if (memberId) {
+    const { data: oldest, error: oldestErr } = await supabase
+      .from("members")
+      .select("id")
+      .eq("team_id", session.team_id as string)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (oldestErr) {
+      return jsonError(oldestErr.message, 500);
+    }
+    firstMemberId = oldest?.id as string | undefined;
+    if (Number.isFinite(started)) {
+      const voteEndsAt = started + VOTE_MS;
+      const isCreator = firstMemberId === memberId;
+      const inEarlyWindow = now >= voteEndsAt - CREATOR_FINALIZE_LEAD_MS;
+      creatorEarlyOk = Boolean(isCreator && inEarlyWindow);
+    }
+  }
+
+  if (!timeUp && !allVoted && !creatorEarlyOk) {
+    if (memberId) {
+      if (firstMemberId === memberId && Number.isFinite(started)) {
+        const voteEndsAt = started + VOTE_MS;
+        if (now < voteEndsAt - CREATOR_FINALIZE_LEAD_MS) {
+          return jsonError(
+            "팀 생성자는 투표 종료 시각 10분 전부터 조기 마감할 수 있습니다.",
+            403
+          );
+        }
+      } else if (firstMemberId !== memberId) {
+        return jsonError("팀을 만든 멤버만 조기 마감할 수 있습니다.", 403);
+      }
+    }
     return jsonError("아직 투표를 마감할 수 없습니다.", 403);
   }
 

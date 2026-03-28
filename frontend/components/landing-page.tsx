@@ -15,6 +15,8 @@ type TeamCreated = {
 type JoinResponse = {
   member: { id: string; team_id: string; nickname: string; created_at: string };
   team: { id: string; name: string };
+  error?: string;
+  code?: string;
 };
 
 export function LandingPage() {
@@ -25,11 +27,18 @@ export function LandingPage() {
   const [nickname, setNickname] = useState("");
   const [joinError, setJoinError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [joinDuplicate, setJoinDuplicate] = useState(false);
+  const [resumeAfterCreate, setResumeAfterCreate] = useState<{
+    invite_code: string;
+    teamId: string;
+    name: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreateError(null);
+    setResumeAfterCreate(null);
     const name = teamName.trim();
     if (!name) return;
     setBusy(true);
@@ -53,11 +62,24 @@ export function LandingPage() {
           nickname: nick,
         }),
       });
-      const joinData = await parseJson<JoinResponse & { error?: string }>(
-        joinRes
-      );
+      const joinData = await parseJson<JoinResponse>(joinRes);
       if (!joinRes.ok) {
-        setCreateError(joinData.error ?? "팀 생성 후 참가에 실패했습니다.");
+        if (
+          joinRes.status === 409 &&
+          joinData.code === "duplicate_nickname"
+        ) {
+          setResumeAfterCreate({
+            invite_code: data.invite_code,
+            teamId: data.id,
+            name: data.name,
+          });
+          setCreateError(
+            joinData.error ??
+              "같은 닉네임이 이미 있습니다. 기존 계정으로 입장해 주세요."
+          );
+        } else {
+          setCreateError(joinData.error ?? "팀 생성 후 참가에 실패했습니다.");
+        }
         return;
       }
       setTeamMeta({
@@ -72,9 +94,58 @@ export function LandingPage() {
     }
   }
 
+  async function handleResumeAfterCreate() {
+    if (!resumeAfterCreate) return;
+    setCreateError(null);
+    const nick = creatorNickname.trim() || "나";
+    setBusy(true);
+    try {
+      const joinRes = await fetch("/api/teams/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invite_code: resumeAfterCreate.invite_code,
+          nickname: nick,
+          resume: true,
+        }),
+      });
+      const joinData = await parseJson<JoinResponse>(joinRes);
+      if (!joinRes.ok) {
+        setCreateError(joinData.error ?? "기존 계정으로 입장하지 못했습니다.");
+        return;
+      }
+      setTeamMeta({
+        teamId: resumeAfterCreate.teamId,
+        name: resumeAfterCreate.name,
+        invite_code: resumeAfterCreate.invite_code,
+      });
+      setStoredMember(resumeAfterCreate.teamId, joinData.member.id);
+      setResumeAfterCreate(null);
+      router.push(`/team/${resumeAfterCreate.teamId}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function completeJoin(
+    code: string,
+    data: JoinResponse,
+    inviteForMeta: string
+  ) {
+    setTeamMeta({
+      teamId: data.team.id,
+      name: data.team.name,
+      invite_code: inviteForMeta,
+    });
+    setStoredMember(data.team.id, data.member.id);
+    setJoinDuplicate(false);
+    router.push(`/team/${data.team.id}`);
+  }
+
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
     setJoinError(null);
+    setJoinDuplicate(false);
     const code = inviteCode.trim().toUpperCase();
     if (!code) {
       setJoinError("초대 코드를 입력해 주세요.");
@@ -92,20 +163,50 @@ export function LandingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ invite_code: code, nickname: nick }),
       });
-      const data = await parseJson<
-        JoinResponse & { error?: string }
-      >(res);
+      const data = await parseJson<JoinResponse>(res);
       if (!res.ok) {
-        setJoinError(data.error ?? "참가에 실패했습니다.");
+        if (res.status === 409 && data.code === "duplicate_nickname") {
+          setJoinError(
+            data.error ??
+              "이 팀에 이미 같은 닉네임이 있습니다. 새로 만들 수 없습니다."
+          );
+          setJoinDuplicate(true);
+        } else {
+          setJoinError(data.error ?? "참가에 실패했습니다.");
+        }
         return;
       }
-      setTeamMeta({
-        teamId: data.team.id,
-        name: data.team.name,
-        invite_code: code,
+      await completeJoin(code, data, code);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleResumeJoin() {
+    setJoinError(null);
+    const code = inviteCode.trim().toUpperCase();
+    const nick = nickname.trim();
+    if (!code || !nick) {
+      setJoinError("초대 코드와 닉네임을 그대로 두고 다시 시도해 주세요.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/teams/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invite_code: code,
+          nickname: nick,
+          resume: true,
+        }),
       });
-      setStoredMember(data.team.id, data.member.id);
-      router.push(`/team/${data.team.id}`);
+      const data = await parseJson<JoinResponse>(res);
+      if (!res.ok) {
+        setJoinError(data.error ?? "기존 계정으로 입장하지 못했습니다.");
+        return;
+      }
+      await completeJoin(code, data, code);
     } finally {
       setBusy(false);
     }
@@ -160,6 +261,22 @@ export function LandingPage() {
               {createError}
             </p>
           ) : null}
+          {resumeAfterCreate ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+              <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
+                방금 만든 팀에 이미 이 닉네임이 있으면, 기존 멤버로 연결할 수
+                있습니다.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleResumeAfterCreate()}
+                className="mt-3 w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:opacity-60"
+              >
+                {busy ? "처리 중…" : "기존 계정으로 입장"}
+              </button>
+            </div>
+          ) : null}
           <button
             type="submit"
             disabled={busy}
@@ -187,6 +304,7 @@ export function LandingPage() {
               onChange={(e) => {
                 setInviteCode(e.target.value);
                 setJoinError(null);
+                setJoinDuplicate(false);
               }}
               placeholder="예: X7K9M2"
               className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm uppercase tracking-wider text-foreground placeholder:normal-case placeholder:tracking-normal placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
@@ -201,7 +319,10 @@ export function LandingPage() {
               id="nickname"
               type="text"
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={(e) => {
+                setNickname(e.target.value);
+                setJoinDuplicate(false);
+              }}
               placeholder="표시할 닉네임"
               className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-foreground placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
               autoComplete="nickname"
@@ -214,6 +335,23 @@ export function LandingPage() {
             >
               {joinError}
             </p>
+          ) : null}
+          {joinDuplicate ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+              <p className="font-medium">이미 이 닉네임으로 참가한 적이 있나요?</p>
+              <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
+                같은 브라우저가 아니거나 기기를 바꿨다면, 기존 멤버로 다시 연결할 수
+                있습니다.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleResumeJoin()}
+                className="mt-3 w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:opacity-60"
+              >
+                {busy ? "처리 중…" : "기존 계정으로 입장"}
+              </button>
+            </div>
           ) : null}
           <button
             type="submit"

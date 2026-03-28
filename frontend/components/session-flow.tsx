@@ -8,6 +8,8 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getStoredMember } from "@/lib/member-storage";
 
 const VOTE_DURATION_SEC = 10 * 60;
+/** 서버 `finalize`의 CREATOR_FINALIZE_LEAD_MS와 동일: 종료 예정 시각 기준 이 안쪽이면 생성자 조기 마감 가능 */
+const CREATOR_FINALIZE_LEAD_MS = 10 * 60 * 1000;
 
 function normalizeMenu(s: string) {
   return s.trim().toLowerCase();
@@ -73,6 +75,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
     null
   );
   const finalizeOnce = useRef(false);
+  const [firstMemberId, setFirstMemberId] = useState<string | null>(null);
 
   const loadSession = useCallback(async () => {
     const res = await fetch(`/api/teams/${teamId}/sessions/today`);
@@ -207,6 +210,26 @@ export function SessionFlow({ teamId }: { teamId: string }) {
   }, [session?.id, loadSession, loadProposals, loadVotes]);
 
   useEffect(() => {
+    if (session?.status !== "voting") {
+      setFirstMemberId(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(`/api/teams/${teamId}/members`);
+      const data = await parseJson<{ members: { id: string }[]; error?: string }>(
+        res
+      );
+      if (cancelled || !res.ok) return;
+      const first = data.members?.[0]?.id ?? null;
+      setFirstMemberId(first);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.status, teamId]);
+
+  useEffect(() => {
     if (session?.status !== "voting" || voteEndsAtMs === null) return;
     const id = window.setInterval(() => {
       const left = Math.max(
@@ -328,24 +351,38 @@ export function SessionFlow({ teamId }: { teamId: string }) {
     [memberId, session, loadVotes]
   );
 
-  const runFinalize = useCallback(async () => {
-    if (!session || finalizeOnce.current) return;
-    finalizeOnce.current = true;
-    try {
-      const res = await fetch(`/api/sessions/${session.id}/finalize`, {
-        method: "POST",
-      });
-      const data = await parseJson<FinalizeResponse & { error?: string }>(res);
-      if (!res.ok) {
+  const runFinalize = useCallback(
+    async (opts?: { asTeamCreator?: boolean }) => {
+      if (!session || finalizeOnce.current) return;
+      finalizeOnce.current = true;
+      try {
+        const asCreator = Boolean(opts?.asTeamCreator && memberId);
+        const res = await fetch(`/api/sessions/${session.id}/finalize`, {
+          method: "POST",
+          ...(asCreator
+            ? {
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ member_id: memberId }),
+              }
+            : {}),
+        });
+        const data = await parseJson<FinalizeResponse & { error?: string }>(res);
+        if (!res.ok) {
+          finalizeOnce.current = false;
+          if (asCreator) {
+            setProposalError(data.error ?? "조기 마감에 실패했습니다.");
+          }
+          return;
+        }
+        setProposalError(null);
+        setFinalizeInfo(data);
+        await loadSession();
+      } catch {
         finalizeOnce.current = false;
-        return;
       }
-      setFinalizeInfo(data);
-      await loadSession();
-    } catch {
-      finalizeOnce.current = false;
-    }
-  }, [session, loadSession]);
+    },
+    [session, loadSession, memberId]
+  );
 
   useEffect(() => {
     if (session?.status !== "voting" || !voteSummary) return;
@@ -428,6 +465,23 @@ export function SessionFlow({ teamId }: { teamId: string }) {
   );
 
   const rankedResults = finalizeInfo?.results ?? [];
+
+  const canCreatorFinalizeEarly =
+    voteEndsAtMs !== null &&
+    Date.now() >= voteEndsAtMs - CREATOR_FINALIZE_LEAD_MS;
+  const isTeamCreator =
+    Boolean(memberId && firstMemberId && memberId === firstMemberId);
+
+  const requestCreatorFinalize = useCallback(() => {
+    if (
+      !window.confirm(
+        "지금 투표를 마감할까요? 아직 투표하지 않은 팀원이 있을 수 있습니다."
+      )
+    ) {
+      return;
+    }
+    void runFinalize({ asTeamCreator: true });
+  }, [runFinalize]);
 
   if (loadError) {
     return (
@@ -612,6 +666,24 @@ export function SessionFlow({ teamId }: { teamId: string }) {
           >
             {formatMmSs(remainingSec)}
           </div>
+
+          {isTeamCreator && canCreatorFinalizeEarly ? (
+            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                팀을 만든 멤버는 투표 종료 시각{" "}
+                <span className="font-medium text-foreground">10분 전</span>부터
+                조기 마감할 수 있습니다. (10분짜리 투표면 투표 내내 가능합니다.)
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={requestCreatorFinalize}
+                className="mt-3 w-full rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-800 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900/60 dark:bg-zinc-950 dark:text-red-200 dark:hover:bg-red-950/40"
+              >
+                지금 투표 마감하기
+              </button>
+            </div>
+          ) : null}
 
           <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
             투표 현황:{" "}

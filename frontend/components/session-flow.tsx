@@ -10,6 +10,7 @@ import {
   getStoredMember,
 } from "@/lib/member-storage";
 import { MenuProposalInspiration } from "@/components/menu-proposal-inspiration";
+import { TieBreakRoulette } from "@/components/tie-break-roulette";
 
 const VOTE_DURATION_SEC = 10 * 60;
 /** 서버 `finalize`의 CREATOR_FINALIZE_LEAD_MS와 동일: 종료 예정 시각 기준 이 안쪽이면 생성자 조기 마감 가능 */
@@ -50,6 +51,8 @@ type FinalizeResponse = {
   status: string;
   decided_menu: string;
   is_tie_broken: boolean;
+  /** 동점 1위 메뉴 이름들 (서버가 룰렛과 동일 후보로 사용) */
+  tie_candidates?: string[];
   results: { menu_name: string; vote_count: number; rank: number }[];
 };
 
@@ -78,6 +81,8 @@ export function SessionFlow({ teamId }: { teamId: string }) {
   const [finalizeInfo, setFinalizeInfo] = useState<FinalizeResponse | null>(
     null
   );
+  /** 동점일 때 룰렛을 마친 뒤에만 최종 축하 카드·결과 목록 표시 */
+  const [celebrationReady, setCelebrationReady] = useState(true);
   const finalizeOnce = useRef(false);
   const [firstMemberId, setFirstMemberId] = useState<string | null>(null);
 
@@ -380,6 +385,15 @@ export function SessionFlow({ teamId }: { teamId: string }) {
         }
         setProposalError(null);
         setFinalizeInfo(data);
+        const tieList =
+          Array.isArray(data.tie_candidates) && data.tie_candidates.length > 0
+            ? data.tie_candidates
+            : (data.results ?? [])
+                .filter((r) => r.rank === 1)
+                .map((r) => r.menu_name);
+        const needsTieRoulette =
+          Boolean(data.is_tie_broken) && tieList.length > 1;
+        setCelebrationReady(!needsTieRoulette);
         setSession((prev) =>
           prev
             ? {
@@ -426,6 +440,19 @@ export function SessionFlow({ teamId }: { teamId: string }) {
   );
 
   const rankedResults = finalizeInfo?.results ?? [];
+
+  const tieCandidates = useMemo(() => {
+    if (!finalizeInfo) return [];
+    if (
+      Array.isArray(finalizeInfo.tie_candidates) &&
+      finalizeInfo.tie_candidates.length > 0
+    ) {
+      return finalizeInfo.tie_candidates;
+    }
+    return (finalizeInfo.results ?? [])
+      .filter((r) => r.rank === 1)
+      .map((r) => r.menu_name);
+  }, [finalizeInfo]);
 
   const canCreatorFinalizeEarly =
     voteEndsAtMs !== null &&
@@ -708,60 +735,72 @@ export function SessionFlow({ teamId }: { teamId: string }) {
 
       {phase === "completed" && decidedMenu ? (
         <>
-          <div className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-100/80 via-app-card to-app-sky-mist/50 p-6 text-center shadow-[var(--app-card-shadow)] dark:border-app-primary/25 dark:from-app-primary/10 dark:via-app-card dark:to-app-sky-mist/20">
-            <p className="text-sm font-semibold text-app-primary">
-              오늘의 메뉴
-            </p>
-            <p className="font-topic mt-2 text-3xl font-bold tracking-tight text-foreground">
-              {decidedMenu}
-            </p>
-            <p className="mt-3 text-sm text-app-muted">
-              팀원 모두 고생했어요!
-            </p>
-            {tieBroken ? (
-              <p className="mt-4 rounded-lg bg-amber-100/80 px-3 py-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">
-                동점이었습니다. 시스템이 무작위로 선정했습니다.
-              </p>
-            ) : null}
-          </div>
+          {!celebrationReady && tieCandidates.length > 1 ? (
+            <TieBreakRoulette
+              candidates={tieCandidates}
+              winner={decidedMenu}
+              onComplete={() => setCelebrationReady(true)}
+            />
+          ) : null}
 
-          <h2 className="mt-10 text-lg font-semibold">전체 투표 결과</h2>
-          <ul className="mt-4 space-y-4">
-            {rankedResults.map((row, idx) => {
-              const maxVotes = Math.max(
-                1,
-                ...rankedResults.map((r) => r.vote_count)
-              );
-              const pct = Math.round((row.vote_count / maxVotes) * 100);
-              return (
-                <li key={`${row.rank}-${row.menu_name}-${idx}`}>
-                  <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-app-muted">
-                      {row.rank}위 · {row.menu_name}
-                    </span>
-                    <span className="font-medium tabular-nums">
-                      {row.vote_count}표
-                    </span>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-app-sky-mist dark:bg-app-sky-soft/50">
-                    <div
-                      className="h-full rounded-full bg-app-primary transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          {celebrationReady ? (
+            <>
+              <div className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-100/80 via-app-card to-app-sky-mist/50 p-6 text-center shadow-[var(--app-card-shadow)] dark:border-app-primary/25 dark:from-app-primary/10 dark:via-app-card dark:to-app-sky-mist/20">
+                <p className="text-sm font-semibold text-app-primary">
+                  오늘의 메뉴
+                </p>
+                <p className="font-topic mt-2 text-3xl font-bold tracking-tight text-foreground">
+                  {decidedMenu}
+                </p>
+                <p className="mt-3 text-sm text-app-muted">
+                  팀원 모두 고생했어요!
+                </p>
+                {tieBroken ? (
+                  <p className="mt-4 rounded-lg bg-amber-100/80 px-3 py-2 text-xs text-amber-900 dark:bg-amber-900/30 dark:text-amber-100">
+                    동점이었습니다. 룰렛으로 최종 메뉴를 정했습니다.
+                  </p>
+                ) : null}
+              </div>
 
-          <div className="mt-10">
-            <Link
-              href="/"
-              className="inline-flex w-full items-center justify-center rounded-full bg-app-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-app-primary-hover sm:w-auto sm:min-w-[12rem]"
-            >
-              처음으로
-            </Link>
-          </div>
+              <h2 className="mt-10 text-lg font-semibold">전체 투표 결과</h2>
+              <ul className="mt-4 space-y-4">
+                {rankedResults.map((row, idx) => {
+                  const maxVotes = Math.max(
+                    1,
+                    ...rankedResults.map((r) => r.vote_count)
+                  );
+                  const pct = Math.round((row.vote_count / maxVotes) * 100);
+                  return (
+                    <li key={`${row.rank}-${row.menu_name}-${idx}`}>
+                      <div className="flex items-center justify-between gap-2 text-sm">
+                        <span className="text-app-muted">
+                          {row.rank}위 · {row.menu_name}
+                        </span>
+                        <span className="font-medium tabular-nums">
+                          {row.vote_count}표
+                        </span>
+                      </div>
+                      <div className="mt-1 h-2 overflow-hidden rounded-full bg-app-sky-mist dark:bg-app-sky-soft/50">
+                        <div
+                          className="h-full rounded-full bg-app-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="mt-10">
+                <Link
+                  href="/"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-app-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-app-primary-hover sm:w-auto sm:min-w-[12rem]"
+                >
+                  처음으로
+                </Link>
+              </div>
+            </>
+          ) : null}
         </>
       ) : null}
     </main>

@@ -247,11 +247,18 @@ export async function POST(
     );
   }
 
+  const tie_candidates =
+    is_tie_broken && leaders.length > 0
+      ? leaders.map((l) => l.menu_name)
+      : [];
+
   return Response.json({
     session_id: updated.id,
     status: updated.status,
     decided_menu,
     is_tie_broken,
+    /** 동점 1위였던 메뉴 목록 (룰렛 후보). 비동점이면 빈 배열 */
+    tie_candidates,
     results,
   });
 }

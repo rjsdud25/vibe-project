@@ -34,5 +34,11 @@ export async function GET(
     return jsonError(error.message, 500);
   }
 
-  return Response.json({ members: members ?? [] });
+  const list = members ?? [];
+  const creator_member_id = list[0]?.id as string | undefined;
+
+  return Response.json({
+    members: list,
+    creator_member_id: creator_member_id ?? null,
+  });
 }

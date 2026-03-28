@@ -42,10 +42,3 @@ export interface Vote {
   created_at: string;
 }
 
-export interface HistoryEntry {
-  session_id: string;
-  date: string;
-  decided_menu: string;
-  vote_count: number;
-  total_members: number;
-}

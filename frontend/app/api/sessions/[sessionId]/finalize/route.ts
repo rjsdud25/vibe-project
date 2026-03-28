@@ -197,6 +197,56 @@ export async function POST(
     return jsonError("세션 상태를 갱신할 수 없습니다.", 403);
   }
 
+  const teamId = session.team_id as string;
+  const { data: teamSessions } = await supabase
+    .from("sessions")
+    .select("id")
+    .eq("team_id", teamId);
+
+  for (const row of teamSessions ?? []) {
+    const sid = row.id as string;
+    const { error: delVotesErr } = await supabase
+      .from("votes")
+      .delete()
+      .eq("session_id", sid);
+    if (delVotesErr) {
+      return jsonError(delVotesErr.message, 500);
+    }
+    const { error: delPropsErr } = await supabase
+      .from("proposals")
+      .delete()
+      .eq("session_id", sid);
+    if (delPropsErr) {
+      return jsonError(delPropsErr.message, 500);
+    }
+  }
+  const { error: delSessionsErr } = await supabase
+    .from("sessions")
+    .delete()
+    .eq("team_id", teamId);
+  if (delSessionsErr) {
+    return jsonError(delSessionsErr.message, 500);
+  }
+  const { error: delMembersErr } = await supabase
+    .from("members")
+    .delete()
+    .eq("team_id", teamId);
+  if (delMembersErr) {
+    return jsonError(delMembersErr.message, 500);
+  }
+  const { error: delTeamErr } = await supabase
+    .from("teams")
+    .delete()
+    .eq("id", teamId);
+
+  if (delTeamErr) {
+    return jsonError(
+      delTeamErr.message ??
+        "투표는 마감되었으나 팀을 삭제하지 못했습니다. Supabase RLS에서 teams DELETE를 허용하는지 확인해 주세요.",
+      500
+    );
+  }
+
   return Response.json({
     session_id: updated.id,
     status: updated.status,

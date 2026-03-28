@@ -40,20 +40,6 @@ export async function GET(
     return jsonError(pErr.message, 500);
   }
 
-  const memberIds = [
-    ...new Set((proposalsRaw ?? []).map((p) => p.member_id as string)),
-  ];
-  const nickById = new Map<string, string>();
-  if (memberIds.length > 0) {
-    const { data: members } = await supabase
-      .from("members")
-      .select("id, nickname")
-      .in("id", memberIds);
-    for (const m of members ?? []) {
-      nickById.set(m.id as string, m.nickname as string);
-    }
-  }
-
   const { count: totalMembers, error: cErr } = await supabase
     .from("members")
     .select("*", { count: "exact", head: true })
@@ -73,7 +59,6 @@ export async function GET(
     id: p.id as string,
     menu_name: p.menu_name as string,
     member_id: p.member_id as string,
-    nickname: nickById.get(p.member_id as string) ?? "",
     created_at: p.created_at as string,
   }));
 

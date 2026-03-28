@@ -5,7 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Proposal, Session } from "@/types";
 import { parseJson } from "@/lib/api-json";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
-import { getStoredMember } from "@/lib/member-storage";
+import {
+  clearMemberStorageForTeam,
+  getStoredMember,
+} from "@/lib/member-storage";
 import { MenuProposalInspiration } from "@/components/menu-proposal-inspiration";
 
 const VOTE_DURATION_SEC = 10 * 60;
@@ -377,12 +380,21 @@ export function SessionFlow({ teamId }: { teamId: string }) {
         }
         setProposalError(null);
         setFinalizeInfo(data);
-        await loadSession();
+        setSession((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: "completed",
+                decided_menu: data.decided_menu,
+              }
+            : prev
+        );
+        clearMemberStorageForTeam(teamId);
       } catch {
         finalizeOnce.current = false;
       }
     },
-    [session, loadSession, memberId]
+    [session, memberId, teamId]
   );
 
   useEffect(() => {
@@ -391,58 +403,6 @@ export function SessionFlow({ teamId }: { teamId: string }) {
       void runFinalize();
     }
   }, [session?.status, voteSummary, remainingSec, runFinalize]);
-
-  useEffect(() => {
-    if (!session || session.status !== "completed" || finalizeInfo) return;
-    const sid = session.id;
-    let cancelled = false;
-    const decidedFallback = session.decided_menu;
-    async function loadDetail() {
-      const res = await fetch(`/api/sessions/${sid}`);
-      const data = await parseJson<{
-        decided_menu: string | null;
-        proposals: { menu_name: string; vote_count: number }[];
-        error?: string;
-      }>(res);
-      if (cancelled || !res.ok) return;
-      const ranked = [...(data.proposals ?? [])].sort(
-        (a, b) => b.vote_count - a.vote_count
-      );
-      const results: {
-        menu_name: string;
-        vote_count: number;
-        rank: number;
-      }[] = [];
-      let i = 0;
-      while (i < ranked.length) {
-        const v = ranked[i]!.vote_count;
-        let j = i;
-        while (j < ranked.length && ranked[j]!.vote_count === v) {
-          j++;
-        }
-        const rank = i + 1;
-        for (let k = i; k < j; k++) {
-          results.push({
-            menu_name: ranked[k]!.menu_name,
-            vote_count: ranked[k]!.vote_count,
-            rank,
-          });
-        }
-        i = j;
-      }
-      setFinalizeInfo({
-        session_id: sid,
-        status: "completed",
-        decided_menu: data.decided_menu ?? decidedFallback ?? "",
-        is_tie_broken: false,
-        results,
-      });
-    }
-    void loadDetail();
-    return () => {
-      cancelled = true;
-    };
-  }, [session, finalizeInfo]);
 
   const liveTallies = useMemo(() => {
     const map: Record<string, number> = {};
@@ -487,9 +447,16 @@ export function SessionFlow({ teamId }: { teamId: string }) {
   if (loadError) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
-        <p className="text-red-600">{loadError}</p>
-        <Link href={`/team/${teamId}`} className="mt-4 inline-block text-app-primary">
-          ← 팀 대시보드
+        <p className="text-red-600 dark:text-red-400">{loadError}</p>
+        <p className="mt-2 text-sm text-app-muted">
+          투표가 끝난 팀은 자동으로 삭제됩니다. 팀이 없어졌다면 처음 화면에서 새로
+          만들거나 참가해 주세요.
+        </p>
+        <Link
+          href="/"
+          className="mt-4 inline-block text-sm font-semibold text-app-primary hover:text-app-primary-hover"
+        >
+          ← 처음으로
         </Link>
       </main>
     );
@@ -632,9 +599,6 @@ export function SessionFlow({ teamId }: { teamId: string }) {
               >
                 <p className="text-lg font-semibold text-foreground">
                   {p.menu_name}
-                </p>
-                <p className="mt-1 text-xs text-app-muted">
-                  제안: {p.nickname ?? "팀원"}
                 </p>
               </li>
             ))}
@@ -790,18 +754,12 @@ export function SessionFlow({ teamId }: { teamId: string }) {
             })}
           </ul>
 
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-10">
             <Link
-              href={`/team/${teamId}`}
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-app-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-app-primary-hover"
+              href="/"
+              className="inline-flex w-full items-center justify-center rounded-full bg-app-primary px-4 py-3 text-center text-sm font-semibold text-white shadow-sm hover:bg-app-primary-hover sm:w-auto sm:min-w-[12rem]"
             >
-              팀 대시보드로 돌아가기
-            </Link>
-            <Link
-              href={`/team/${teamId}/history`}
-              className="inline-flex flex-1 items-center justify-center rounded-full border border-app-border bg-app-card px-4 py-3 text-center text-sm font-medium text-foreground shadow-sm hover:bg-app-input-bg"
-            >
-              이력 보기
+              처음으로
             </Link>
           </div>
         </>

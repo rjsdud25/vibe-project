@@ -52,3 +52,25 @@ export function getStoredMember(teamId: string): string | null {
     return null;
   }
 }
+
+/** 투표 종료 등으로 팀이 사라진 뒤 로컬 참가 정보 제거 */
+export function clearMemberStorageForTeam(teamId: string) {
+  try {
+    const raw = sessionStorage.getItem(MEMBER_KEY);
+    if (raw) {
+      const o = JSON.parse(raw) as StoredMember;
+      if (o?.teamId === teamId) {
+        sessionStorage.removeItem(MEMBER_KEY);
+      }
+    }
+    const metaRaw = sessionStorage.getItem(TEAM_META_KEY);
+    if (metaRaw) {
+      const meta = JSON.parse(metaRaw) as TeamMeta;
+      if (meta?.teamId === teamId) {
+        sessionStorage.removeItem(TEAM_META_KEY);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}

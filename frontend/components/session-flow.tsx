@@ -6,6 +6,7 @@ import type { Proposal, Session } from "@/types";
 import { parseJson } from "@/lib/api-json";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { getStoredMember } from "@/lib/member-storage";
+import { MenuProposalInspiration } from "@/components/menu-proposal-inspiration";
 
 const VOTE_DURATION_SEC = 10 * 60;
 /** 서버 `finalize`의 CREATOR_FINALIZE_LEAD_MS와 동일: 종료 예정 시각 기준 이 안쪽이면 생성자 조기 마감 가능 */
@@ -556,6 +557,16 @@ export function SessionFlow({ teamId }: { teamId: string }) {
             팀원이 한 가지씩 메뉴를 제안하면 전원 제안 완료 후 투표를 시작할 수
             있습니다.
           </p>
+
+          {memberId && !myProposal ? (
+            <MenuProposalInspiration
+              disabled={busy}
+              onPick={(name) => {
+                setMenuInput(name);
+                setProposalError(null);
+              }}
+            />
+          ) : null}
 
           {myProposal ? (
             <p className="mt-4 text-sm text-app-muted">

@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api-response";
+import { normalizeMenu } from "@/lib/normalize-menu";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-
-function normalizeMenu(s: string) {
-  return s.trim().toLowerCase();
-}
 
 export async function GET(
   _request: Request,

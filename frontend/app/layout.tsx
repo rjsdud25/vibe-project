@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "오늘의 메뉴 추천",
-  description: "팀원과 함께 오늘의 점심 메뉴를 정해보세요!",
+  title: "Team 메뉴 정하기",
+  description: "팀원과 함께 메뉴를 제안하고 투표해 정해 보세요.",
 };
 
 export default function RootLayout({
@@ -27,8 +28,9 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        {children}
+      <body className="flex min-h-full flex-col bg-background text-foreground font-sans">
+        <SiteHeader />
+        <div className="flex-1">{children}</div>
       </body>
     </html>
   );

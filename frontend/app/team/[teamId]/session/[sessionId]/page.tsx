@@ -57,13 +57,15 @@ export default async function SessionDetailPage({
   );
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+    <main className="mx-auto min-h-0 w-full max-w-2xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+      <p className="text-sm text-app-muted">
         {formatHistoryDate(data.date)}
       </p>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight">세션 상세</h1>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+        세션 상세
+      </h1>
       {data.decided_menu ? (
-        <p className="mt-2 text-lg text-emerald-700 dark:text-emerald-300">
+        <p className="mt-2 text-lg text-app-primary">
           선정 메뉴: <strong>{data.decided_menu}</strong>
         </p>
       ) : null}
@@ -88,7 +90,7 @@ export default async function SessionDetailPage({
               </div>
               <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                 <div
-                  className="h-full rounded-full bg-emerald-500 dark:bg-emerald-600"
+                  className="h-full rounded-full bg-app-primary"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -100,7 +102,7 @@ export default async function SessionDetailPage({
       <div className="mt-10">
         <Link
           href={`/team/${teamId}/history`}
-          className="inline-flex rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-foreground hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          className="inline-flex rounded-full border border-app-border bg-app-card px-5 py-3 text-sm font-medium text-foreground shadow-sm hover:bg-app-input-bg"
         >
           목록으로 돌아가기
         </Link>

@@ -53,9 +53,7 @@ export function HistoryList({ teamId }: { teamId: string }) {
   }, [teamId]);
 
   if (loading) {
-    return (
-      <p className="text-zinc-500">불러오는 중…</p>
-    );
+    return <p className="text-app-muted">불러오는 중…</p>;
   }
 
   if (error) {
@@ -68,23 +66,23 @@ export function HistoryList({ teamId }: { teamId: string }) {
 
   if (history.length === 0) {
     return (
-      <p className="text-zinc-500">완료된 메뉴 이력이 아직 없습니다.</p>
+      <p className="text-app-muted">완료된 메뉴 이력이 아직 없습니다.</p>
     );
   }
 
   return (
-    <ul className="mt-8 divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white/90 dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-950/90">
+    <ul className="mt-8 divide-y divide-app-border overflow-hidden rounded-2xl border border-app-border bg-app-card shadow-[var(--app-card-shadow)]">
       {history.map((row) => (
         <li key={row.session_id}>
           <Link
             href={`/team/${teamId}/session/${row.session_id}`}
-            className="flex flex-col gap-1 px-4 py-4 transition hover:bg-zinc-50 sm:flex-row sm:items-center sm:justify-between dark:hover:bg-zinc-900/60"
+            className="flex flex-col gap-1 px-4 py-4 transition hover:bg-app-input-bg sm:flex-row sm:items-center sm:justify-between"
           >
-            <span className="font-medium text-foreground">
+            <span className="font-semibold text-foreground">
               {formatHistoryDate(row.date)}
             </span>
             <span className="text-foreground">{row.decided_menu}</span>
-            <span className="text-sm text-zinc-500">
+            <span className="text-sm text-app-muted">
               득표 {row.vote_count} / {row.total_members}명
             </span>
           </Link>

@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f7fe;
+  --foreground: #1a1d2e;
+  --app-muted: #64748b;
+  --app-border: #e8ecf4;
+  --app-card: #ffffff;
+  --app-input-bg: #f8fafc;
+  --app-primary: #2d60ff;
+  --app-primary-hover: #2452e6;
+  --app-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1419;
+    --foreground: #f1f5f9;
+    --app-muted: #94a3b8;
+    --app-border: #2d3a4d;
+    --app-card: #1a2332;
+    --app-input-bg: #151d2a;
+    --app-card-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  }
 }
 
 @theme inline {
@@ -10,11 +29,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-app-primary: #2d60ff;
+  --color-app-primary-hover: #2452e6;
+  --color-app-muted: var(--app-muted);
+  --color-app-border: var(--app-border);
+  --color-app-card: var(--app-card);
+  --color-app-input-bg: var(--app-input-bg);
+  --shadow-app-card: 0 4px 20px rgba(0, 0, 0, 0.05);
 }

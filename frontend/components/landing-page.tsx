@@ -31,6 +31,23 @@ type JoinResponse = {
 
 type JoinStep = "pick" | "password" | "nickname";
 
+const cardClass =
+  "flex min-h-0 min-w-0 flex-1 flex-col rounded-2xl border border-app-border bg-app-card p-6 shadow-[var(--app-card-shadow)] md:p-8";
+
+const inputClass =
+  "w-full rounded-full border border-app-border bg-app-input-bg px-4 py-3 text-sm text-foreground placeholder:text-app-muted focus:border-app-primary focus:outline-none focus:ring-2 focus:ring-app-primary/20";
+
+const labelClass = "text-xs font-semibold uppercase tracking-wide text-app-muted";
+
+const btnPrimary =
+  "inline-flex items-center justify-center rounded-full bg-app-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-app-primary-hover disabled:cursor-not-allowed disabled:opacity-50";
+
+const btnPrimarySm =
+  "inline-flex shrink-0 items-center justify-center rounded-full bg-app-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-app-primary-hover disabled:opacity-50";
+
+const btnSecondary =
+  "inline-flex items-center justify-center rounded-full border border-app-border bg-app-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-app-input-bg disabled:opacity-50";
+
 export function LandingPage() {
   const router = useRouter();
   const [teamName, setTeamName] = useState("");
@@ -102,6 +119,16 @@ export function LandingPage() {
     setNickname("");
     setJoinError(null);
     setJoinDuplicate(false);
+  }
+
+  function beginJoinTeam(teamId: string) {
+    setJoinError(null);
+    setJoinDuplicate(false);
+    setSelectedTeamId(teamId);
+    setJoinPasswordInput("");
+    setVerifiedPassword("");
+    setNickname("");
+    setJoinStep("password");
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -221,19 +248,6 @@ export function LandingPage() {
     router.push(`/team/${data.team.id}`);
   }
 
-  function goToPasswordStep() {
-    setJoinError(null);
-    setJoinDuplicate(false);
-    if (!selectedTeamId) {
-      setJoinError("참가할 팀을 목록에서 선택해 주세요.");
-      return;
-    }
-    setJoinPasswordInput("");
-    setVerifiedPassword("");
-    setNickname("");
-    setJoinStep("password");
-  }
-
   async function handleVerifyPassword(e: React.FormEvent) {
     e.preventDefault();
     setJoinError(null);
@@ -339,324 +353,327 @@ export function LandingPage() {
     }
   }
 
+  function teamInitial(name: string) {
+    const t = name.trim();
+    if (!t) return "?";
+    const ch = t[0]!;
+    return /[a-zA-Z가-힣0-9]/.test(ch) ? ch.toUpperCase() : "?";
+  }
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center gap-10 px-4 py-12 sm:px-6">
-      <header className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          오늘의 메뉴 추천
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
-          팀을 만들거나, 목록에서 팀을 고른 뒤 비밀번호로 참가해 보세요.
-        </p>
-      </header>
+    <div className="min-h-0 flex-1">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+        <div className="mb-8 text-center lg:mb-10 lg:text-left">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
+            Team 메뉴 정하기
+          </h1>
+          <p className="mx-auto mt-3 max-w-2xl text-base text-app-muted lg:mx-0">
+            새 팀을 만들거나 목록에서 팀을 고른 뒤, 비밀번호로 참가할 수
+            있습니다.
+          </p>
+        </div>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white/80 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/80">
-        <h2 className="text-lg font-medium text-foreground">팀 만들기</h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          팀 이름·참가용 비밀번호·첫 닉네임을 입력하면 대시보드로 이동합니다.
-          비밀번호는 다른 팀원이 목록에서 팀을 고른 뒤 입력합니다.
-        </p>
-        <form onSubmit={handleCreate} className="mt-4 flex flex-col gap-3">
-          <label className="sr-only" htmlFor="team-name">
-            팀 이름
-          </label>
-          <input
-            id="team-name"
-            type="text"
-            value={teamName}
-            onChange={(e) => setTeamName(e.target.value)}
-            placeholder="팀 이름"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-foreground placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
-            autoComplete="organization"
-          />
-          <label
-            className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
-            htmlFor="create-team-password"
-          >
-            팀 비밀번호 (참가 시 사용)
-          </label>
-          <input
-            id="create-team-password"
-            type="password"
-            value={createPassword}
-            onChange={(e) => {
-              setCreatePassword(e.target.value);
-              setCreateError(null);
-            }}
-            placeholder="4~32자, 영문·숫자 (대소문자 구분 없음)"
-            autoComplete="new-password"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-foreground placeholder:font-sans placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-          <label
-            className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
-            htmlFor="create-team-password-confirm"
-          >
-            팀 비밀번호 확인
-          </label>
-          <input
-            id="create-team-password-confirm"
-            type="password"
-            value={createPasswordConfirm}
-            onChange={(e) => {
-              setCreatePasswordConfirm(e.target.value);
-              setCreateError(null);
-            }}
-            placeholder="비밀번호 다시 입력"
-            autoComplete="new-password"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-foreground placeholder:font-sans placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-          <label
-            className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
-            htmlFor="creator-nick"
-          >
-            내 닉네임 (팀 첫 멤버)
-          </label>
-          <input
-            id="creator-nick"
-            type="text"
-            value={creatorNickname}
-            onChange={(e) => setCreatorNickname(e.target.value)}
-            placeholder="비우면 &quot;나&quot;로 참가"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-foreground placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
-            autoComplete="nickname"
-          />
-          {createError ? (
-            <p
-              role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
-            >
-              {createError}
-            </p>
-          ) : null}
-          {resumeAfterCreate ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
-              <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
-                방금 만든 팀에 이미 이 닉네임이 있으면, 기존 멤버로 연결할 수
-                있습니다.
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch lg:gap-8">
+          {/* 팀 참가 — 디자인 참고: 왼쪽 카드 / 진행 과제형 리스트 */}
+          <section className={cardClass}>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-foreground">팀 참가하기</h2>
+              <p className="mt-1 text-sm text-app-muted">
+                팀을 선택한 뒤 참가 → 비밀번호 확인 → 닉네임을 입력하세요.
               </p>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void handleResumeAfterCreate()}
-                className="mt-3 w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:opacity-60"
-              >
-                {busy ? "처리 중…" : "기존 계정으로 입장"}
-              </button>
             </div>
-          ) : null}
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-60 dark:focus:ring-offset-zinc-950"
-          >
-            {busy ? "처리 중…" : "팀 만들기"}
-          </button>
-        </form>
-      </section>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white/80 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/80">
-        <h2 className="text-lg font-medium text-foreground">팀 참가하기</h2>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          아래 목록에서 팀을 선택한 뒤 참가하기를 누르면, 팀 비밀번호 입력 →
-          닉네임 설정 순으로 진행됩니다.
-        </p>
+            {teamsLoading ? (
+              <p className="text-sm text-app-muted">팀 목록을 불러오는 중…</p>
+            ) : teamsError ? (
+              <p
+                role="alert"
+                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/50 dark:text-red-200"
+              >
+                {teamsError}
+              </p>
+            ) : teams.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-app-border bg-app-input-bg/50 px-4 py-8 text-center text-sm text-app-muted">
+                아직 만들어진 팀이 없습니다.
+                <br />
+                오른쪽에서 팀을 만들어 보세요.
+              </div>
+            ) : (
+              <>
+                {joinStep === "pick" ? (
+                  <div className="flex flex-col gap-1">
+                    <span className={`${labelClass} mb-2`}>팀 목록</span>
+                    <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                      {teams.map((t) => (
+                        <li key={t.id}>
+                          <div className="flex items-center gap-3 rounded-2xl border border-transparent px-3 py-3 transition hover:border-app-border hover:bg-app-input-bg/80">
+                            <div
+                              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-app-primary/10 text-sm font-bold text-app-primary"
+                              aria-hidden
+                            >
+                              {teamInitial(t.name)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-semibold text-foreground">
+                                {t.name}
+                              </p>
+                              <p className="text-xs text-app-muted">
+                                팀 비밀번호가 있으면 참가할 수 있어요
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => beginJoinTeam(t.id)}
+                              className={btnPrimarySm}
+                            >
+                              참가
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
-        {teamsLoading ? (
-          <p className="mt-4 text-sm text-zinc-500">팀 목록을 불러오는 중…</p>
-        ) : teamsError ? (
-          <p
-            role="alert"
-            className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
-          >
-            {teamsError}
-          </p>
-        ) : teams.length === 0 ? (
-          <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-            아직 만들어진 팀이 없습니다. 위에서 팀을 만들어 보세요.
-          </p>
-        ) : (
-          <>
-            {joinStep === "pick" ? (
-              <div className="mt-4 flex flex-col gap-2">
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                  팀 선택
-                </span>
-                <ul className="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-zinc-200 p-2 dark:border-zinc-800">
-                  {teams.map((t) => {
-                    const selected = t.id === selectedTeamId;
-                    return (
-                      <li key={t.id}>
+                {joinStep === "password" ? (
+                  <form
+                    onSubmit={(e) => void handleVerifyPassword(e)}
+                    className="flex flex-col gap-4"
+                  >
+                    <p className="text-sm text-foreground">
+                      <span className="text-app-muted">선택한 팀</span>{" "}
+                      <span className="font-semibold">
+                        {selectedTeam?.name ?? "—"}
+                      </span>
+                    </p>
+                    <div>
+                      <label className={labelClass} htmlFor="team-password">
+                        팀 비밀번호
+                      </label>
+                      <input
+                        id="team-password"
+                        type="password"
+                        value={joinPasswordInput}
+                        onChange={(e) => {
+                          setJoinPasswordInput(e.target.value);
+                          setJoinError(null);
+                        }}
+                        placeholder="팀에서 공유한 비밀번호"
+                        autoComplete="off"
+                        className={`${inputClass} mt-2 font-mono tracking-wider`}
+                      />
+                    </div>
+                    {joinError ? (
+                      <p
+                        role="alert"
+                        className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/50 dark:text-red-200"
+                      >
+                        {joinError}
+                      </p>
+                    ) : null}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={resetJoinFlow}
+                        className={btnSecondary}
+                      >
+                        목록으로
+                      </button>
+                      <button type="submit" disabled={busy} className={btnPrimary}>
+                        {busy ? "확인 중…" : "확인"}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
+
+                {joinStep === "nickname" ? (
+                  <form
+                    onSubmit={(e) => void handleJoinNickname(e)}
+                    className="flex flex-col gap-4"
+                  >
+                    <p className="text-sm text-foreground">
+                      <span className="text-app-muted">팀</span>{" "}
+                      <span className="font-semibold">
+                        {selectedTeam?.name ?? "—"}
+                      </span>
+                    </p>
+                    <p className="text-xs text-app-muted">
+                      비밀번호가 확인되었습니다. 표시할 닉네임을 입력하세요.
+                    </p>
+                    <div>
+                      <label className={labelClass} htmlFor="join-nickname">
+                        닉네임
+                      </label>
+                      <input
+                        id="join-nickname"
+                        type="text"
+                        value={nickname}
+                        onChange={(e) => {
+                          setNickname(e.target.value);
+                          setJoinDuplicate(false);
+                        }}
+                        placeholder="표시할 닉네임"
+                        className={`${inputClass} mt-2`}
+                        autoComplete="nickname"
+                      />
+                    </div>
+                    {joinError ? (
+                      <p
+                        role="alert"
+                        className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/50 dark:text-red-200"
+                      >
+                        {joinError}
+                      </p>
+                    ) : null}
+                    {joinDuplicate ? (
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-100">
+                        <p className="font-semibold">
+                          이미 이 닉네임으로 참가한 적이 있나요?
+                        </p>
+                        <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
+                          기존 멤버로 다시 연결할 수 있습니다.
+                        </p>
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedTeamId(t.id);
-                            setJoinError(null);
-                          }}
-                          className={`w-full rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition ${
-                            selected
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-950 dark:border-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-100"
-                              : "border-transparent bg-zinc-50 text-foreground hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-                          }`}
+                          disabled={busy}
+                          onClick={() => void handleResumeJoin()}
+                          className={`${btnPrimary} mt-3 w-full bg-amber-600 hover:bg-amber-700`}
                         >
-                          {t.name}
+                          {busy ? "처리 중…" : "기존 계정으로 입장"}
                         </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-                <button
-                  type="button"
-                  disabled={busy || !selectedTeamId}
-                  onClick={goToPasswordStep}
-                  className="mt-2 rounded-lg border border-zinc-300 bg-zinc-100 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-950"
-                >
-                  참가하기
-                </button>
-              </div>
-            ) : null}
+                      </div>
+                    ) : null}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setJoinStep("password");
+                          setJoinError(null);
+                          setJoinDuplicate(false);
+                          setNickname("");
+                        }}
+                        className={btnSecondary}
+                      >
+                        비밀번호 단계로
+                      </button>
+                      <button type="submit" disabled={busy} className={btnPrimary}>
+                        {busy ? "처리 중…" : "참가 완료"}
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
+              </>
+            )}
+          </section>
 
-            {joinStep === "password" ? (
-              <form
-                onSubmit={(e) => void handleVerifyPassword(e)}
-                className="mt-4 flex flex-col gap-3"
-              >
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  선택한 팀:{" "}
-                  <span className="font-semibold text-foreground">
-                    {selectedTeam?.name ?? "—"}
-                  </span>
-                </p>
-                <label
-                  className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
-                  htmlFor="team-password"
-                >
+          {/* 팀 만들기 — 오른쪽 카드 */}
+          <section className={cardClass}>
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-foreground">팀 만들기</h2>
+              <p className="mt-1 text-sm text-app-muted">
+                이름·참가용 비밀번호·첫 닉네임을 입력하면 대시보드로 이동합니다.
+              </p>
+            </div>
+            <form onSubmit={handleCreate} className="flex flex-col gap-4">
+              <div>
+                <label className={labelClass} htmlFor="team-name">
+                  팀 이름
+                </label>
+                <input
+                  id="team-name"
+                  type="text"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="예: 기획팀 점심방"
+                  className={`${inputClass} mt-2`}
+                  autoComplete="organization"
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="create-team-password">
                   팀 비밀번호
                 </label>
                 <input
-                  id="team-password"
+                  id="create-team-password"
                   type="password"
-                  value={joinPasswordInput}
+                  value={createPassword}
                   onChange={(e) => {
-                    setJoinPasswordInput(e.target.value);
-                    setJoinError(null);
+                    setCreatePassword(e.target.value);
+                    setCreateError(null);
                   }}
-                  placeholder="팀에서 공유한 비밀번호"
-                  autoComplete="off"
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm uppercase tracking-wider text-foreground placeholder:normal-case placeholder:tracking-normal placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
+                  placeholder="4~32자, 영문·숫자"
+                  autoComplete="new-password"
+                  className={`${inputClass} mt-2 font-mono text-sm`}
                 />
-                {joinError ? (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
-                  >
-                    {joinError}
-                  </p>
-                ) : null}
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={resetJoinFlow}
-                    className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800"
-                  >
-                    다른 팀 고르기
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={busy}
-                    className="flex-1 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
-                  >
-                    {busy ? "확인 중…" : "확인"}
-                  </button>
-                </div>
-              </form>
-            ) : null}
-
-            {joinStep === "nickname" ? (
-              <form
-                onSubmit={(e) => void handleJoinNickname(e)}
-                className="mt-4 flex flex-col gap-3"
-              >
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  선택한 팀:{" "}
-                  <span className="font-semibold text-foreground">
-                    {selectedTeam?.name ?? "—"}
-                  </span>
-                </p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  비밀번호가 확인되었습니다. 표시할 닉네임을 정해 주세요.
-                </p>
+              </div>
+              <div>
                 <label
-                  className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
-                  htmlFor="join-nickname"
+                  className={labelClass}
+                  htmlFor="create-team-password-confirm"
                 >
-                  닉네임
+                  비밀번호 확인
                 </label>
                 <input
-                  id="join-nickname"
-                  type="text"
-                  value={nickname}
+                  id="create-team-password-confirm"
+                  type="password"
+                  value={createPasswordConfirm}
                   onChange={(e) => {
-                    setNickname(e.target.value);
-                    setJoinDuplicate(false);
+                    setCreatePasswordConfirm(e.target.value);
+                    setCreateError(null);
                   }}
-                  placeholder="표시할 닉네임"
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-foreground placeholder:text-zinc-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-zinc-700 dark:bg-zinc-900"
+                  placeholder="다시 입력"
+                  autoComplete="new-password"
+                  className={`${inputClass} mt-2 font-mono text-sm`}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="creator-nick">
+                  내 닉네임 (첫 멤버)
+                </label>
+                <input
+                  id="creator-nick"
+                  type="text"
+                  value={creatorNickname}
+                  onChange={(e) => setCreatorNickname(e.target.value)}
+                  placeholder="비우면 &quot;나&quot;로 참가"
+                  className={`${inputClass} mt-2`}
                   autoComplete="nickname"
                 />
-                {joinError ? (
-                  <p
-                    role="alert"
-                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
-                  >
-                    {joinError}
+              </div>
+              {createError ? (
+                <p
+                  role="alert"
+                  className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/40 dark:bg-red-950/50 dark:text-red-200"
+                >
+                  {createError}
+                </p>
+              ) : null}
+              {resumeAfterCreate ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-100">
+                  <p className="text-amber-900/90 dark:text-amber-200/90">
+                    방금 만든 팀에 이미 이 닉네임이 있으면, 기존 멤버로 연결할 수
+                    있습니다.
                   </p>
-                ) : null}
-                {joinDuplicate ? (
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
-                    <p className="font-medium">
-                      이미 이 닉네임으로 참가한 적이 있나요?
-                    </p>
-                    <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
-                      기존 멤버로 다시 연결할 수 있습니다.
-                    </p>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void handleResumeJoin()}
-                      className="mt-3 w-full rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700 disabled:opacity-60"
-                    >
-                      {busy ? "처리 중…" : "기존 계정으로 입장"}
-                    </button>
-                  </div>
-                ) : null}
-                <div className="flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => {
-                      setJoinStep("password");
-                      setJoinError(null);
-                      setJoinDuplicate(false);
-                      setNickname("");
-                    }}
-                    className="rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-foreground hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+                    onClick={() => void handleResumeAfterCreate()}
+                    className={`${btnPrimary} mt-3 w-full bg-amber-600 hover:bg-amber-700`}
                   >
-                    비밀번호 단계로
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={busy}
-                    className="flex-1 rounded-lg border border-zinc-300 bg-zinc-100 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:focus:ring-offset-zinc-950"
-                  >
-                    {busy ? "처리 중…" : "참가 완료"}
+                    {busy ? "처리 중…" : "기존 계정으로 입장"}
                   </button>
                 </div>
-              </form>
-            ) : null}
-          </>
-        )}
-      </section>
-    </main>
+              ) : null}
+              <button type="submit" disabled={busy} className={`${btnPrimary} w-full`}>
+                {busy ? "처리 중…" : "팀 만들고 시작하기"}
+              </button>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
   );
 }

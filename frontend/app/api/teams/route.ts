@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api-response";
+import { validateTeamName } from "@/lib/team-name";
 import {
   normalizeTeamJoinPassword,
   validateTeamJoinPassword,
@@ -32,13 +33,14 @@ export async function POST(request: Request) {
     typeof body === "object" && body !== null
       ? (body as Record<string, unknown>)
       : {};
-  const name = typeof b.name === "string" ? b.name.trim() : "";
+  const nameRaw = typeof b.name === "string" ? b.name : "";
+  const nameErr = validateTeamName(nameRaw);
+  if (nameErr) {
+    return jsonError(nameErr, 400);
+  }
+  const name = nameRaw.trim();
   const joinPasswordRaw =
     typeof b.join_password === "string" ? b.join_password : "";
-
-  if (!name) {
-    return jsonError("팀 이름을 입력해 주세요.", 400);
-  }
 
   const invite_code = normalizeTeamJoinPassword(joinPasswordRaw);
   if (!invite_code) {

@@ -20,3 +20,8 @@ export function validateTeamJoinPassword(normalized: string): string | null {
   }
   return null;
 }
+
+/** 랜딩 폼 도움말·placeholder용 한 줄 설명 */
+export function teamJoinPasswordRulesHint(): string {
+  return `${TEAM_JOIN_PASSWORD_MIN_LEN}~${TEAM_JOIN_PASSWORD_MAX_LEN}자, 영문·숫자만 · 대소문자 구분 없음(저장 시 대문자)`;
+}

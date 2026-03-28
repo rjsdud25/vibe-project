@@ -5,7 +5,14 @@ import { useEffect, useMemo, useState } from "react";
 import { parseJson } from "@/lib/api-json";
 import { setStoredMember, setTeamMeta } from "@/lib/member-storage";
 import {
+  MEMBER_NICKNAME_MAX_LEN,
+  validateMemberNickname,
+} from "@/lib/member-nickname";
+import { TEAM_NAME_MAX_LEN, validateTeamName } from "@/lib/team-name";
+import {
   normalizeTeamJoinPassword,
+  TEAM_JOIN_PASSWORD_MAX_LEN,
+  teamJoinPasswordRulesHint,
   validateTeamJoinPassword,
 } from "@/lib/team-join-password";
 
@@ -111,6 +118,22 @@ export function LandingPage() {
     [teams, selectedTeamId]
   );
 
+  const createPwdNormalized = useMemo(
+    () => normalizeTeamJoinPassword(createPassword),
+    [createPassword]
+  );
+  const createPwdConfirmNorm = useMemo(
+    () => normalizeTeamJoinPassword(createPasswordConfirm),
+    [createPasswordConfirm]
+  );
+  const createPwdFormatError =
+    createPwdNormalized.length > 0
+      ? validateTeamJoinPassword(createPwdNormalized)
+      : null;
+  const createPwdMismatch =
+    createPasswordConfirm.length > 0 &&
+    createPwdNormalized !== createPwdConfirmNorm;
+
   function resetJoinFlow() {
     setJoinStep("pick");
     setSelectedTeamId(null);
@@ -135,8 +158,17 @@ export function LandingPage() {
     e.preventDefault();
     setCreateError(null);
     setResumeAfterCreate(null);
+    const nameErr = validateTeamName(teamName);
+    if (nameErr) {
+      setCreateError(nameErr);
+      return;
+    }
     const name = teamName.trim();
-    if (!name) return;
+    const nickErr = validateMemberNickname(creatorNickname);
+    if (nickErr) {
+      setCreateError(nickErr);
+      return;
+    }
     const pwdNorm = normalizeTeamJoinPassword(createPassword);
     const pwdCheck = validateTeamJoinPassword(pwdNorm);
     if (pwdCheck) {
@@ -574,23 +606,42 @@ export function LandingPage() {
             <div className="mb-6">
               <h2 className="text-xl font-bold text-foreground">팀 만들기</h2>
               <p className="mt-1 text-sm text-app-muted">
-                이름·참가용 비밀번호·첫 닉네임을 입력하면 대시보드로 이동합니다.
+                팀원이 &ldquo;팀 참가하기&rdquo;에서 쓸 비밀번호를 정하고, 첫
+                닉네임으로 바로 대시보드에 들어갑니다.
               </p>
+              <ol className="mt-3 list-inside list-decimal space-y-1 text-xs text-app-muted">
+                <li>팀 이름</li>
+                <li>참가 비밀번호(팀원에게 공유)</li>
+                <li>표시할 닉네임(비우면 &quot;나&quot;)</li>
+              </ol>
             </div>
             <form onSubmit={handleCreate} className="flex flex-col gap-4">
               <div>
-                <label className={labelClass} htmlFor="team-name">
-                  팀 이름
-                </label>
+                <div className="flex items-baseline justify-between gap-2">
+                  <label className={labelClass} htmlFor="team-name">
+                    팀 이름
+                  </label>
+                  <span className="text-[11px] text-app-muted tabular-nums">
+                    {teamName.trim().length}/{TEAM_NAME_MAX_LEN}
+                  </span>
+                </div>
                 <input
                   id="team-name"
                   type="text"
                   value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
+                  onChange={(e) => {
+                    setTeamName(e.target.value);
+                    setCreateError(null);
+                  }}
                   placeholder="예: 기획팀 점심방"
+                  maxLength={TEAM_NAME_MAX_LEN}
+                  aria-describedby="team-name-hint"
                   className={`${inputClass} mt-2`}
                   autoComplete="organization"
                 />
+                <p id="team-name-hint" className="mt-1.5 text-xs text-app-muted">
+                  목록에 표시되는 이름입니다. 공백만으로는 만들 수 없습니다.
+                </p>
               </div>
               <div>
                 <label className={labelClass} htmlFor="create-team-password">
@@ -604,10 +655,39 @@ export function LandingPage() {
                     setCreatePassword(e.target.value);
                     setCreateError(null);
                   }}
-                  placeholder="4~32자, 영문·숫자"
+                  placeholder={teamJoinPasswordRulesHint()}
                   autoComplete="new-password"
+                  maxLength={TEAM_JOIN_PASSWORD_MAX_LEN}
+                  aria-describedby="create-pwd-hint create-pwd-live"
                   className={`${inputClass} mt-2 font-mono text-sm`}
                 />
+                <p id="create-pwd-hint" className="mt-1.5 text-xs text-app-muted">
+                  {teamJoinPasswordRulesHint()}
+                </p>
+                {createPwdFormatError ? (
+                  <p
+                    id="create-pwd-live"
+                    role="status"
+                    className="mt-1.5 text-xs font-medium text-amber-800 dark:text-amber-200"
+                  >
+                    {createPwdFormatError}
+                  </p>
+                ) : createPwdNormalized.length > 0 ? (
+                  <p
+                    id="create-pwd-live"
+                    role="status"
+                    className="mt-1.5 text-xs text-app-muted"
+                  >
+                    저장 시 참가 코드:{" "}
+                    <span className="font-mono text-foreground">
+                      {createPwdNormalized}
+                    </span>
+                  </p>
+                ) : (
+                  <span id="create-pwd-live" className="sr-only">
+                    비밀번호를 입력하세요.
+                  </span>
+                )}
               </div>
               <div>
                 <label
@@ -626,22 +706,54 @@ export function LandingPage() {
                   }}
                   placeholder="다시 입력"
                   autoComplete="new-password"
+                  maxLength={TEAM_JOIN_PASSWORD_MAX_LEN}
+                  aria-invalid={createPwdMismatch}
+                  aria-describedby={
+                    createPwdMismatch ? "create-pwd-mismatch" : undefined
+                  }
                   className={`${inputClass} mt-2 font-mono text-sm`}
                 />
+                {createPwdMismatch ? (
+                  <p
+                    id="create-pwd-mismatch"
+                    role="alert"
+                    className="mt-1.5 text-xs font-medium text-amber-800 dark:text-amber-200"
+                  >
+                    위 비밀번호와 일치하지 않습니다.
+                  </p>
+                ) : null}
               </div>
               <div>
-                <label className={labelClass} htmlFor="creator-nick">
-                  내 닉네임 (첫 멤버)
-                </label>
+                <div className="flex items-baseline justify-between gap-2">
+                  <label className={labelClass} htmlFor="creator-nick">
+                    내 닉네임 (첫 멤버)
+                  </label>
+                  <span className="text-[11px] text-app-muted tabular-nums">
+                    {(creatorNickname.trim() || "나").length}/
+                    {MEMBER_NICKNAME_MAX_LEN}
+                  </span>
+                </div>
                 <input
                   id="creator-nick"
                   type="text"
                   value={creatorNickname}
-                  onChange={(e) => setCreatorNickname(e.target.value)}
+                  onChange={(e) => {
+                    setCreatorNickname(e.target.value);
+                    setCreateError(null);
+                  }}
                   placeholder="비우면 &quot;나&quot;로 참가"
+                  maxLength={MEMBER_NICKNAME_MAX_LEN}
+                  aria-describedby="creator-nick-hint"
                   className={`${inputClass} mt-2`}
                   autoComplete="nickname"
                 />
+                <p
+                  id="creator-nick-hint"
+                  className="mt-1.5 text-xs text-app-muted"
+                >
+                  팀 안에서 보이는 이름입니다. 나중에도 같은 팀·닉네임이면 기존
+                  멤버로 이어 붙일 수 있습니다.
+                </p>
               </div>
               {createError ? (
                 <p

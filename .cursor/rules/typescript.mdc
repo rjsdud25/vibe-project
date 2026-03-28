@@ -1,0 +1,18 @@
+---
+description: TypeScript 타입·Supabase 결과 타입 연동 규칙
+globs:
+  - "**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# TypeScript
+
+## 해야 할 것
+
+- 새 파일은 TypeScript(`.ts`, `.tsx`)로 작성한다.
+- `any` 남발을 피하고, 필요하면 명시적 타입·`unknown`·제네릭을 사용한다.
+- Supabase 클라이언트·쿼리 결과에는 가능하면 생성된 타입(Database types) 또는 명시적 인터페이스를 맞춘다.
+
+## 하면 안 되는 것
+
+- 타입 안전성을 깨는 우회(`any` 남용, 불필요한 `@ts-ignore`)를 기본 선택으로 쓰지 않는다.

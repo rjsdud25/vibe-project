@@ -1,0 +1,22 @@
+---
+description: Next.js App Router·페이지·레이아웃·컴포넌트(서버·클라이언트) 규칙
+globs:
+  - "app/**/*.{ts,tsx}"
+  - "components/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Next.js App Router · 컴포넌트
+
+## 해야 할 것
+
+- 라우팅·레이아웃·페이지는 `app/` 아래에 둔다.
+- 서버 컴포넌트를 기본으로 하고, `use client`는 브라우저 API·상태·이벤트가 필요한 최소 범위에만 쓴다.
+- 데이터 페칭·폼 처리·리다이렉트 등은 App Router 패턴(`loading.tsx`, `error.tsx`, Route Handlers `route.ts` 등)에 맞춘다.
+- 환경 변수는 `NEXT_PUBLIC_` 접두사 규칙을 지키고, 서버 전용 비밀은 클라이언트 번들에 노출되지 않게 한다.
+
+## 하면 안 되는 것
+
+- **`pages/` 라우터로 새 페이지·API를 추가하지 않는다.** (App Router만 사용)
+- App Router와 혼용 목적으로 같은 경로를 `pages/`와 `app/`에 중복 정의하지 않는다.
+- 서버 전용 비밀키를 `NEXT_PUBLIC_` 변수나 클라이언트 컴포넌트에 넣지 않는다.

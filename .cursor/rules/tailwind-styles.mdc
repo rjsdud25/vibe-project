@@ -1,0 +1,19 @@
+---
+description: Tailwind CSS·스타일링 규칙
+globs:
+  - "**/*.tsx"
+  - "**/*.css"
+alwaysApply: false
+---
+
+# 스타일 (Tailwind CSS)
+
+## 해야 할 것
+
+- 스타일은 Tailwind 유틸리티 클래스를 우선한다.
+- 인라인 `style`·별도 CSS 모듈은 프로젝트에 이미 그 패턴이 있을 때만 맞춰 사용한다.
+- 반복되는 UI는 컴포넌트로 추출하고, `className`은 읽기 쉽게 정리한다.
+
+## 하면 안 되는 것
+
+- **전역 CSS로 Tailwind와 중복·충돌하는 임의의 스타일 시스템**(다른 유틸리티 프레임워크, 프로젝트에 없는 CSS-in-JS 등)을 사용자 요청 없이 도입하지 않는다.

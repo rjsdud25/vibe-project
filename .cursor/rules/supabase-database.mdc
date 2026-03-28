@@ -1,0 +1,22 @@
+---
+description: Supabase·DB 접근·RLS·보안 규칙
+globs:
+  - "**/supabase/**/*.{ts,tsx}"
+  - "lib/**/*.{ts,tsx}"
+  - "app/**/route.ts"
+  - "app/**/actions.ts"
+alwaysApply: false
+---
+
+# 데이터베이스 (Supabase)
+
+## 해야 할 것
+
+- DB 접근은 Supabase 클라이언트(서버/클라이언트 용도 구분)를 통해 한다. 연결 정보는 환경 변수로만 둔다.
+- RLS(Row Level Security)·정책을 존중하는 쿼리 패턴을 쓰고, 민감한 작업은 서버(Route Handler, Server Action 등)에서 처리하는 것을 우선한다.
+- 마이그레이션·스키마 변경이 필요하면 Supabase 방식(SQL 마이그레이션 등)에 맞춰 제안하고, 임의로 로컬만의 스키마와 충돌 나게 작성하지 않는다.
+
+## 하면 안 되는 것
+
+- **서비스 역할 키(Service Role)**를 클라이언트 번들·`NEXT_PUBLIC_`·공개 저장소에 넣지 않는다.
+- RLS를 우회한다고 가정하고 클라이언트에서만 “관리자 권한” 동작을 구현하지 않는다.

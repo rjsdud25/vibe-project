@@ -15,6 +15,8 @@ import { TieBreakRoulette } from "@/components/tie-break-roulette";
 const VOTE_DURATION_SEC = 10 * 60;
 /** 서버 `finalize`의 CREATOR_FINALIZE_LEAD_MS와 동일: 종료 예정 시각 기준 이 안쪽이면 생성자 조기 마감 가능 */
 const CREATOR_FINALIZE_LEAD_MS = 10 * 60 * 1000;
+/** Supabase Realtime 이벤트 연속 발생 시 REST 재조회가 겹치지 않도록 묶는 간격 */
+const REALTIME_REFETCH_DEBOUNCE_MS = 400;
 
 function normalizeMenu(s: string) {
   return s.trim().toLowerCase();
@@ -166,6 +168,43 @@ export function SessionFlow({ teamId }: { teamId: string }) {
     if (!session?.id) return;
     const sid = session.id;
     const supabase = createBrowserSupabaseClient();
+
+    let proposalsTimer: ReturnType<typeof setTimeout> | null = null;
+    let votesTimer: ReturnType<typeof setTimeout> | null = null;
+    let sessionTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleLoadProposals = () => {
+      if (proposalsTimer !== null) clearTimeout(proposalsTimer);
+      proposalsTimer = setTimeout(() => {
+        proposalsTimer = null;
+        void loadProposals(sid);
+      }, REALTIME_REFETCH_DEBOUNCE_MS);
+    };
+
+    const scheduleLoadVotes = () => {
+      if (votesTimer !== null) clearTimeout(votesTimer);
+      votesTimer = setTimeout(() => {
+        votesTimer = null;
+        void loadVotes(sid);
+      }, REALTIME_REFETCH_DEBOUNCE_MS);
+    };
+
+    const scheduleSessionSync = () => {
+      if (sessionTimer !== null) clearTimeout(sessionTimer);
+      sessionTimer = setTimeout(() => {
+        sessionTimer = null;
+        void loadSession().then((s) => {
+          if (!s) return;
+          if (s.status === "voting") {
+            void loadVotes(s.id);
+          }
+          if (s.status === "proposing") {
+            void loadProposals(s.id);
+          }
+        });
+      }, REALTIME_REFETCH_DEBOUNCE_MS);
+    };
+
     const channel = supabase
       .channel(`session-realtime-${sid}`)
       .on(
@@ -176,9 +215,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
           table: "proposals",
           filter: `session_id=eq.${sid}`,
         },
-        () => {
-          void loadProposals(sid);
-        }
+        scheduleLoadProposals
       )
       .on(
         "postgres_changes",
@@ -188,9 +225,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
           table: "votes",
           filter: `session_id=eq.${sid}`,
         },
-        () => {
-          void loadVotes(sid);
-        }
+        scheduleLoadVotes
       )
       .on(
         "postgres_changes",
@@ -200,20 +235,14 @@ export function SessionFlow({ teamId }: { teamId: string }) {
           table: "sessions",
           filter: `id=eq.${sid}`,
         },
-        () => {
-          void loadSession().then((s) => {
-            if (s && s.status === "voting") {
-              void loadVotes(s.id);
-            }
-            if (s && s.status === "proposing") {
-              void loadProposals(s.id);
-            }
-          });
-        }
+        scheduleSessionSync
       )
       .subscribe();
 
     return () => {
+      if (proposalsTimer !== null) clearTimeout(proposalsTimer);
+      if (votesTimer !== null) clearTimeout(votesTimer);
+      if (sessionTimer !== null) clearTimeout(sessionTimer);
       void supabase.removeChannel(channel);
     };
   }, [session?.id, loadSession, loadProposals, loadVotes]);

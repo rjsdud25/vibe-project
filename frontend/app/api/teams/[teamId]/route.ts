@@ -25,5 +25,10 @@ export async function GET(
     return jsonError("팀을 찾을 수 없습니다.", 404);
   }
 
-  return Response.json(team);
+  return Response.json({
+    id: team.id,
+    name: team.name,
+    join_password: team.invite_code as string,
+    created_at: team.created_at,
+  });
 }

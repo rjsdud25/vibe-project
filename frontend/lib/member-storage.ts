@@ -4,7 +4,7 @@ const MEMBER_KEY = "menu_app_member";
 export type TeamMeta = {
   teamId: string;
   name: string;
-  invite_code: string;
+  join_password: string;
 };
 
 export type StoredMember = {
@@ -25,7 +25,7 @@ export function getTeamMeta(): TeamMeta | null {
     const raw = sessionStorage.getItem(TEAM_META_KEY);
     if (!raw) return null;
     const o = JSON.parse(raw) as TeamMeta;
-    if (o?.teamId && o?.name && o?.invite_code) return o;
+    if (o?.teamId && o?.name && o?.join_password) return o;
     return null;
   } catch {
     return null;

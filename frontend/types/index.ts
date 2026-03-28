@@ -1,7 +1,8 @@
 export interface Team {
   id: string;
   name: string;
-  invite_code: string;
+  /** 팀 참가용 비밀번호 (서버 DB `invite_code`와 동일 값) */
+  join_password: string;
   created_at: string;
 }
 

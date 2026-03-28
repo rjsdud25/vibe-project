@@ -10,13 +10,17 @@ export async function POST(request: Request) {
     return jsonError("요청 본문이 올바른 JSON이 아닙니다.", 400);
   }
   const o = body as Record<string, unknown>;
-  const inviteRaw =
-    typeof o.invite_code === "string" ? o.invite_code.trim().toUpperCase() : "";
+  const teamId = typeof o.team_id === "string" ? o.team_id.trim() : "";
+  const password =
+    typeof o.password === "string" ? o.password.trim().toUpperCase() : "";
   const nickname =
     typeof o.nickname === "string" ? o.nickname.trim() : "";
   const resume = o.resume === true;
-  if (!inviteRaw) {
-    return jsonError("초대 코드를 입력해 주세요.", 400);
+  if (!teamId) {
+    return jsonError("팀을 선택해 주세요.", 400);
+  }
+  if (!password) {
+    return jsonError("비밀번호를 입력해 주세요.", 400);
   }
   if (!nickname) {
     return jsonError("닉네임을 입력해 주세요.", 400);
@@ -25,15 +29,18 @@ export async function POST(request: Request) {
   const supabase = createServerSupabaseClient();
   const { data: team, error: teamErr } = await supabase
     .from("teams")
-    .select("id, name")
-    .eq("invite_code", inviteRaw)
+    .select("id, name, invite_code")
+    .eq("id", teamId)
     .maybeSingle();
 
   if (teamErr) {
     return jsonError(teamErr.message, 500);
   }
   if (!team) {
-    return jsonError("존재하지 않는 초대 코드입니다.", 404);
+    return jsonError("팀을 찾을 수 없습니다.", 404);
+  }
+  if ((team.invite_code as string) !== password) {
+    return jsonError("비밀번호가 올바르지 않습니다.", 401);
   }
 
   const { data: existing, error: findErr } = await supabase

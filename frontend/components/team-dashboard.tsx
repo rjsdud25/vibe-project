@@ -52,7 +52,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
         setTeamMeta({
           teamId,
           name: teamJson.name,
-          invite_code: teamJson.invite_code,
+          join_password: teamJson.join_password,
         });
       }
     }
@@ -65,7 +65,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
   const copyInvite = useCallback(async () => {
     if (!team) return;
     try {
-      await navigator.clipboard.writeText(team.invite_code);
+      await navigator.clipboard.writeText(team.join_password);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -108,11 +108,14 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
 
       <section className="rounded-2xl border border-zinc-200 bg-white/90 p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/90">
         <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          초대 코드
+          팀 비밀번호
         </h2>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          참가 화면에서 팀을 고른 뒤 이 비밀번호를 입력하면 들어올 수 있습니다.
+        </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <span className="rounded-lg bg-zinc-100 px-3 py-2 font-mono text-lg font-semibold tracking-widest text-foreground dark:bg-zinc-900">
-            {team.invite_code}
+            {team.join_password}
           </span>
           <button
             type="button"

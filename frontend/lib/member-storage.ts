@@ -1,10 +1,10 @@
 const TEAM_META_KEY = "menu_app_team_meta";
 const MEMBER_KEY = "menu_app_member";
 
+/** 팀 표시용 메타만 저장합니다. 참가 비밀번호는 XSS 시 유출되므로 저장하지 않습니다. */
 export type TeamMeta = {
   teamId: string;
   name: string;
-  join_password: string;
 };
 
 export type StoredMember = {
@@ -14,19 +14,26 @@ export type StoredMember = {
 
 export function setTeamMeta(meta: TeamMeta) {
   try {
-    sessionStorage.setItem(TEAM_META_KEY, JSON.stringify(meta));
+    const payload: TeamMeta = { teamId: meta.teamId, name: meta.name };
+    sessionStorage.setItem(TEAM_META_KEY, JSON.stringify(payload));
   } catch {
     /* ignore */
   }
 }
 
+type LegacyTeamMetaJson = TeamMeta & { join_password?: string };
+
 export function getTeamMeta(): TeamMeta | null {
   try {
     const raw = sessionStorage.getItem(TEAM_META_KEY);
     if (!raw) return null;
-    const o = JSON.parse(raw) as TeamMeta;
-    if (o?.teamId && o?.name && o?.join_password) return o;
-    return null;
+    const o = JSON.parse(raw) as LegacyTeamMetaJson;
+    if (!o?.teamId || !o?.name) return null;
+    const meta: TeamMeta = { teamId: o.teamId, name: o.name };
+    if (o.join_password != null && o.join_password !== "") {
+      setTeamMeta(meta);
+    }
+    return meta;
   } catch {
     return null;
   }
@@ -65,7 +72,7 @@ export function clearMemberStorageForTeam(teamId: string) {
     }
     const metaRaw = sessionStorage.getItem(TEAM_META_KEY);
     if (metaRaw) {
-      const meta = JSON.parse(metaRaw) as TeamMeta;
+      const meta = JSON.parse(metaRaw) as LegacyTeamMetaJson;
       if (meta?.teamId === teamId) {
         sessionStorage.removeItem(TEAM_META_KEY);
       }

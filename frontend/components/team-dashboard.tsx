@@ -67,7 +67,6 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
         setTeamMeta({
           teamId,
           name: teamJson.name,
-          join_password: teamJson.join_password,
         });
       }
     }

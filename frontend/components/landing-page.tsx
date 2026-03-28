@@ -225,7 +225,6 @@ export function LandingPage() {
       setTeamMeta({
         teamId: data.id,
         name: data.name,
-        join_password: data.join_password,
       });
       setStoredMember(data.id, joinData.member.id);
       router.push(`/team/${data.id}`);
@@ -258,7 +257,6 @@ export function LandingPage() {
       setTeamMeta({
         teamId: resumeAfterCreate.teamId,
         name: resumeAfterCreate.name,
-        join_password: resumeAfterCreate.join_password,
       });
       setStoredMember(resumeAfterCreate.teamId, joinData.member.id);
       setResumeAfterCreate(null);
@@ -268,11 +266,10 @@ export function LandingPage() {
     }
   }
 
-  function completeJoin(data: JoinResponse, joinPassword: string) {
+  function completeJoin(data: JoinResponse) {
     setTeamMeta({
       teamId: data.team.id,
       name: data.team.name,
-      join_password: joinPassword,
     });
     setStoredMember(data.team.id, data.member.id);
     setJoinDuplicate(false);
@@ -345,7 +342,7 @@ export function LandingPage() {
         }
         return;
       }
-      completeJoin(data, verifiedPassword);
+      completeJoin(data);
     } finally {
       setBusy(false);
     }
@@ -379,7 +376,7 @@ export function LandingPage() {
         setJoinError(data.error ?? "기존 계정으로 입장하지 못했습니다.");
         return;
       }
-      completeJoin(data, verifiedPassword);
+      completeJoin(data);
     } finally {
       setBusy(false);
     }

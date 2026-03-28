@@ -61,7 +61,7 @@ export default async function SessionDetailPage({
       <p className="text-sm text-app-muted">
         {formatHistoryDate(data.date)}
       </p>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
+      <h1 className="font-topic mt-2 text-2xl font-bold tracking-tight text-foreground">
         세션 상세
       </h1>
       {data.decided_menu ? (
@@ -81,14 +81,14 @@ export default async function SessionDetailPage({
                 <span>
                   {idx + 1}위 · {p.menu_name}
                   {p.nickname ? (
-                    <span className="text-zinc-500"> ({p.nickname})</span>
+                    <span className="text-app-muted"> ({p.nickname})</span>
                   ) : null}
                 </span>
-                <span className="tabular-nums text-zinc-700 dark:text-zinc-300">
+                <span className="tabular-nums text-foreground">
                   {c}표
                 </span>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-app-sky-mist dark:bg-app-sky-soft/50">
                 <div
                   className="h-full rounded-full bg-app-primary"
                   style={{ width: `${pct}%` }}

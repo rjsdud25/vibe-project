@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Jua } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
@@ -10,6 +10,13 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+/** 둥근 톤의 주제·타이틀용 (한글 지원) */
+const fontTopic = Jua({
+  weight: "400",
+  variable: "--font-topic-display",
   subsets: ["latin"],
 });
 
@@ -26,9 +33,9 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fontTopic.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-background text-foreground font-sans">
+      <body className="flex min-h-full flex-col bg-transparent text-foreground font-sans">
         <SiteHeader />
         <div className="flex-1">{children}</div>
       </body>

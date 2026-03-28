@@ -364,7 +364,7 @@ export function LandingPage() {
     <div className="min-h-0 flex-1">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <div className="mb-8 text-center lg:mb-10 lg:text-left">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
+          <h1 className="font-topic text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-[2.5rem] lg:leading-tight">
             Team 메뉴 정하기
           </h1>
           <p className="mx-auto mt-3 max-w-2xl text-base text-app-muted lg:mx-0">

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-app-border/80 bg-app-card/85 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-sky-200/70 bg-app-card/80 backdrop-blur-md dark:border-sky-800/50 dark:bg-app-card/75">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
@@ -15,7 +15,7 @@ export function SiteHeader() {
             M
           </span>
           <div className="flex flex-col leading-tight">
-            <span className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+            <span className="font-topic text-base font-bold tracking-tight text-foreground sm:text-lg">
               오늘의 메뉴
             </span>
             <span className="text-xs font-medium text-app-muted">

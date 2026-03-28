@@ -107,7 +107,7 @@ export function TeamDashboard({ teamId }: { teamId: string }) {
   return (
     <main className="mx-auto min-h-0 w-full max-w-3xl flex-1 px-4 py-10 sm:px-6 lg:py-12">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+        <h1 className="font-topic text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {team.name}
         </h1>
         <p className="mt-1 text-sm text-app-muted">팀 대시보드</p>

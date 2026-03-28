@@ -497,7 +497,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
   if (!session) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
-        <p className="text-zinc-500">불러오는 중…</p>
+        <p className="text-app-muted">불러오는 중…</p>
       </main>
     );
   }
@@ -521,7 +521,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
       ) : null}
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+        <span className="text-sm text-app-muted">
           {formatDisplayDate(session.date)}
         </span>
         {phase === "proposing" ? (
@@ -530,7 +530,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
           </span>
         ) : null}
         {phase === "voting" ? (
-          <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-900 dark:bg-blue-900/40 dark:text-blue-100">
+          <span className="rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-900 dark:bg-sky-900/35 dark:text-sky-100">
             투표 중
           </span>
         ) : null}
@@ -549,14 +549,16 @@ export function SessionFlow({ teamId }: { teamId: string }) {
 
       {phase === "proposing" ? (
         <>
-          <h1 className="text-2xl font-semibold tracking-tight">메뉴 제안</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="font-topic text-2xl font-bold tracking-tight">
+            메뉴 제안
+          </h1>
+          <p className="mt-1 text-sm text-app-muted">
             팀원이 한 가지씩 메뉴를 제안하면 전원 제안 완료 후 투표를 시작할 수
             있습니다.
           </p>
 
           {myProposal ? (
-            <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
+            <p className="mt-4 text-sm text-app-muted">
               내 제안: <strong>{myProposal.menu_name}</strong> — 다른 팀원을
               기다리는 중입니다.
             </p>
@@ -568,7 +570,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
               <div className="min-w-0 flex-1">
                 <label
                   htmlFor="menu"
-                  className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                  className="text-xs font-medium text-app-muted"
                 >
                   메뉴 제안
                 </label>
@@ -581,7 +583,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
                   }}
                   placeholder="예: 김치찌개"
                   disabled={busy || !memberId}
-                  className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-foreground placeholder:text-zinc-400 focus:border-app-primary focus:outline-none focus:ring-2 focus:ring-app-primary/25 dark:border-app-border dark:bg-app-input-bg"
+                  className="mt-1 w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-foreground placeholder:text-app-muted focus:border-app-primary focus:outline-none focus:ring-2 focus:ring-app-primary/25 dark:bg-app-input-bg"
                 />
               </div>
               <button
@@ -602,7 +604,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
             </p>
           ) : null}
 
-          <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="mt-4 text-sm text-app-muted">
             제안 현황:{" "}
             <span className="font-semibold text-foreground">
               {new Set(proposals.map((p) => p.member_id)).size}/
@@ -615,12 +617,12 @@ export function SessionFlow({ teamId }: { teamId: string }) {
             {proposals.map((p) => (
               <li
                 key={p.id}
-                className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/80"
+                className="rounded-xl border border-app-border bg-app-card p-4 shadow-[var(--app-card-shadow)] dark:border-app-border dark:bg-app-card"
               >
                 <p className="text-lg font-semibold text-foreground">
                   {p.menu_name}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500">
+                <p className="mt-1 text-xs text-app-muted">
                   제안: {p.nickname ?? "팀원"}
                 </p>
               </li>
@@ -637,7 +639,7 @@ export function SessionFlow({ teamId }: { teamId: string }) {
               투표 시작
             </button>
             {!allProposed ? (
-              <p className="mt-2 text-center text-xs text-zinc-500">
+              <p className="mt-2 text-center text-xs text-app-muted">
                 모든 팀원이 제안하면 버튼이 활성화됩니다.
               </p>
             ) : null}
@@ -646,13 +648,15 @@ export function SessionFlow({ teamId }: { teamId: string }) {
       ) : null}
 
       {phase === "voting" && !voteSummary ? (
-        <p className="mt-6 text-zinc-500">투표 정보를 불러오는 중…</p>
+        <p className="mt-6 text-app-muted">투표 정보를 불러오는 중…</p>
       ) : null}
 
       {phase === "voting" && voteSummary ? (
         <>
-          <h1 className="text-2xl font-semibold tracking-tight">메뉴 투표</h1>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <h1 className="font-topic text-2xl font-bold tracking-tight">
+            메뉴 투표
+          </h1>
+          <p className="mt-1 text-sm text-app-muted">
             마음에 드는 메뉴에 투표하세요. 시간이 끝나거나 전원이 투표하면
             결과로 넘어갑니다.
           </p>
@@ -661,15 +665,15 @@ export function SessionFlow({ teamId }: { teamId: string }) {
             className={`mt-4 flex items-center justify-center rounded-2xl border px-4 py-4 text-4xl font-mono font-bold tabular-nums ${
               remainingSec <= 60
                 ? "border-red-300 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-200"
-                : "border-zinc-200 bg-zinc-50 text-foreground dark:border-zinc-800 dark:bg-zinc-900/80"
+                : "border-sky-200/80 bg-app-sky-mist/90 text-foreground dark:border-app-border dark:bg-app-sky-soft/40"
             }`}
           >
             {formatMmSs(remainingSec)}
           </div>
 
           {isTeamCreator && canCreatorFinalizeEarly ? (
-            <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+            <div className="mt-4 rounded-xl border border-sky-200/70 bg-app-sky-mist/50 p-4 dark:border-app-border dark:bg-app-sky-soft/25">
+              <p className="text-sm text-app-muted">
                 팀을 만든 멤버는 투표 종료 시각{" "}
                 <span className="font-medium text-foreground">10분 전</span>부터
                 조기 마감할 수 있습니다. (10분짜리 투표면 투표 내내 가능합니다.)
@@ -678,14 +682,14 @@ export function SessionFlow({ teamId }: { teamId: string }) {
                 type="button"
                 disabled={busy}
                 onClick={requestCreatorFinalize}
-                className="mt-3 w-full rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-medium text-red-800 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900/60 dark:bg-zinc-950 dark:text-red-200 dark:hover:bg-red-950/40"
+                className="mt-3 w-full rounded-lg border border-red-200 bg-app-card px-4 py-2.5 text-sm font-medium text-red-800 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-900/60 dark:bg-app-card dark:text-red-200 dark:hover:bg-red-950/40"
               >
                 지금 투표 마감하기
               </button>
             </div>
           ) : null}
 
-          <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-300">
+          <p className="mt-4 text-sm text-app-muted">
             투표 현황:{" "}
             <span className="font-semibold text-foreground">
               {voteSummary.voted_count}/{voteSummary.total_members}명
@@ -710,10 +714,10 @@ export function SessionFlow({ teamId }: { teamId: string }) {
                     }`}
                   >
                     <span className="text-lg font-semibold">{p.menu_name}</span>
-                    <span className="mt-2 block text-sm text-zinc-600 dark:text-zinc-400">
+                    <span className="mt-2 block text-sm text-app-muted">
                       득표 {count}표
                     </span>
-                    <span className="mt-3 inline-block rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                    <span className="mt-3 inline-block rounded-md bg-app-sky-soft/70 px-2 py-1 text-xs font-medium text-foreground dark:bg-app-sky-soft/50 dark:text-foreground">
                       투표
                     </span>
                   </button>
@@ -729,11 +733,11 @@ export function SessionFlow({ teamId }: { teamId: string }) {
 
       {phase === "completed" && decidedMenu ? (
         <>
-          <div className="rounded-2xl border border-app-primary/20 bg-gradient-to-br from-app-primary/[0.07] to-app-card p-6 text-center shadow-[var(--app-card-shadow)]">
+          <div className="rounded-2xl border border-sky-200/80 bg-gradient-to-br from-sky-100/80 via-app-card to-app-sky-mist/50 p-6 text-center shadow-[var(--app-card-shadow)] dark:border-app-primary/25 dark:from-app-primary/10 dark:via-app-card dark:to-app-sky-mist/20">
             <p className="text-sm font-semibold text-app-primary">
               오늘의 메뉴
             </p>
-            <p className="mt-2 text-3xl font-bold tracking-tight text-foreground">
+            <p className="font-topic mt-2 text-3xl font-bold tracking-tight text-foreground">
               {decidedMenu}
             </p>
             <p className="mt-3 text-sm text-app-muted">
@@ -757,14 +761,14 @@ export function SessionFlow({ teamId }: { teamId: string }) {
               return (
                 <li key={`${row.rank}-${row.menu_name}-${idx}`}>
                   <div className="flex items-center justify-between gap-2 text-sm">
-                    <span className="text-zinc-500">
+                    <span className="text-app-muted">
                       {row.rank}위 · {row.menu_name}
                     </span>
                     <span className="font-medium tabular-nums">
                       {row.vote_count}표
                     </span>
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-app-sky-mist dark:bg-app-sky-soft/50">
                     <div
                       className="h-full rounded-full bg-app-primary transition-all"
                       style={{ width: `${pct}%` }}

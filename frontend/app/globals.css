@@ -1,26 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f7fe;
-  --foreground: #1a1d2e;
-  --app-muted: #64748b;
-  --app-border: #e8ecf4;
-  --app-card: #ffffff;
-  --app-input-bg: #f8fafc;
-  --app-primary: #2d60ff;
-  --app-primary-hover: #2452e6;
-  --app-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --background: #e3f4fc;
+  --foreground: #152532;
+  --app-muted: #5a7589;
+  --app-border: #b9d9ec;
+  --app-card: #fafeff;
+  --app-input-bg: #eef8fc;
+  --app-primary: #1c9ad4;
+  --app-primary-hover: #1580b5;
+  --app-sky-soft: #c8e9f7;
+  --app-sky-mist: #dff3fb;
+  --app-card-shadow: 0 8px 28px rgba(28, 120, 170, 0.1);
+}
+
+html {
+  min-height: 100%;
+  background-color: #d4ecfa;
+  background-image:
+    radial-gradient(
+      ellipse 140% 90% at 50% -30%,
+      #bae6fd 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 70% 55% at 100% 0%,
+      rgba(191, 219, 254, 0.55) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 60% 50% at 0% 20%,
+      rgba(224, 242, 254, 0.9) 0%,
+      transparent 45%
+    ),
+    linear-gradient(168deg, #dbeafe 0%, #e0f7ff 38%, #e8f4fc 72%, #eef8ff 100%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f1419;
-    --foreground: #f1f5f9;
-    --app-muted: #94a3b8;
-    --app-border: #2d3a4d;
-    --app-card: #1a2332;
-    --app-input-bg: #151d2a;
-    --app-card-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+    --background: #0c1520;
+    --foreground: #e8f4fc;
+    --app-muted: #8ba4b8;
+    --app-border: #2a4a62;
+    --app-card: #152a3a;
+    --app-input-bg: #112530;
+    --app-primary: #4db8e8;
+    --app-primary-hover: #6bc5ed;
+    --app-sky-soft: #1e3d52;
+    --app-sky-mist: #163040;
+    --app-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  html {
+    background-color: #0a1219;
+    background-image:
+      radial-gradient(
+        ellipse 120% 80% at 50% -25%,
+        rgba(56, 189, 248, 0.12) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 80% 60% at 100% 0%,
+        rgba(14, 165, 233, 0.08) 0%,
+        transparent 45%
+      ),
+      linear-gradient(168deg, #0c1824 0%, #0f1e2c 45%, #0c1520 100%);
   }
 }
 
@@ -29,11 +73,14 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-app-primary: #2d60ff;
-  --color-app-primary-hover: #2452e6;
+  --font-topic: var(--font-topic-display);
+  --color-app-primary: var(--app-primary);
+  --color-app-primary-hover: var(--app-primary-hover);
   --color-app-muted: var(--app-muted);
   --color-app-border: var(--app-border);
   --color-app-card: var(--app-card);
   --color-app-input-bg: var(--app-input-bg);
-  --shadow-app-card: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --color-app-sky-soft: var(--app-sky-soft);
+  --color-app-sky-mist: var(--app-sky-mist);
+  --shadow-app-card: var(--app-card-shadow);
 }

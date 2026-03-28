@@ -10,7 +10,7 @@ export default async function HistoryPage({
 
   return (
     <main className="mx-auto min-h-0 w-full max-w-2xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">
+      <h1 className="font-topic text-2xl font-bold tracking-tight text-foreground">
         메뉴 이력
       </h1>
       <p className="mt-1 text-sm text-app-muted">
